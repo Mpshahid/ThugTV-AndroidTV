@@ -1,1 +1,49 @@
+name: Build ThugTV Android TV APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          unzip -q gradle-8.9-bin.zip -d "$HOME/gradle"
+          echo "$HOME/gradle/gradle-8.9/bin" >> "$GITHUB_PATH"
+
+      - name: Extract Android project
+        run: |
+          unzip -q ThugTV_AndroidTV_Project.zip
+          test -f ThugTV_AndroidTV/app/build.gradle
+          test -f ThugTV_AndroidTV/app/src/main/AndroidManifest.xml
+
+      - name: Build debug APK
+        working-directory: ThugTV_AndroidTV
+        run: gradle --no-daemon assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ThugTV-AndroidTV-APK
+          path: ThugTV_AndroidTV/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
 
